@@ -1,50 +1,158 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <!-- viewport-fit=cover agar area aman ponsel ikut diperhitungkan -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#3A3A3C">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="KABOBS VCPIS">
+  <meta name="referrer" content="no-referrer-when-downgrade">
+
   <title>KABOBS VCPIS</title>
-  <link rel="icon" href="https://drive.google.com/thumbnail?id=17_cCmLXpw8Hq5UkmJAcvkMTpTMuA-w3i&sz=w512" type="image/x-icon">
+  <link rel="icon" type="image/png"
+        href="https://drive.google.com/thumbnail?id=17_cCmLXpw8Hq5UkmJAcvkMTpTMuA-w3i&sz=w512">
+  <link rel="apple-touch-icon"
+        href="https://drive.google.com/thumbnail?id=17_cCmLXpw8Hq5UkmJAcvkMTpTMuA-w3i&sz=w512">
+
   <style>
+    /* Tinggi layar di browser ponsel berubah saat bilah alamat menyusut.
+       100vh selalu dihitung terhadap layar penuh, sehingga bagian bawah
+       iframe ikut terpotong. Urutan di bawah dipakai dari yang paling
+       akurat ke cadangan paling aman:
+         1. --app-h  : hasil pengukuran JavaScript, paling presisi
+         2. 100dvh   : satuan dinamis, didukung browser modern
+         3. 100vh    : cadangan terakhir untuk browser lama            */
+    :root { --app-h: 100vh; }
+
+    * { box-sizing: border-box; }
+
     html, body {
       margin: 0;
       padding: 0;
-      height: 100%;
+      width: 100%;
+      background: #F4F6F8;
       overflow: hidden;
-      font-family: sans-serif;
+      overscroll-behavior: none;              /* cegah tarik-segarkan di atas iframe */
+      -webkit-text-size-adjust: 100%;
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
     }
-    .iframe-container {
-      position: relative;
-      width: 100%;
-      height: 100vh;
+
+    .app-frame {
+      position: fixed;
+      inset: 0;
+      height: var(--app-h);
+      height: 100dvh;
+      display: block;
+      background: #F4F6F8;
+      /* hormati area aman ponsel berponi dan bilah gestur */
+      padding-top: env(safe-area-inset-top, 0px);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+      padding-left: env(safe-area-inset-left, 0px);
+      padding-right: env(safe-area-inset-right, 0px);
     }
+
     iframe {
+      display: block;                         /* hilangkan celah bawaan elemen inline */
       width: 100%;
       height: 100%;
-      border: none;
+      border: 0;
+      background: #F4F6F8;
     }
+
     .loader {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 1.2rem;
-      color: #666;
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      background: #F4F6F8;
+      color: #767B85;
+      font-size: 14px;
       z-index: 10;
+      transition: opacity .25s ease;
     }
+    .loader.hide { opacity: 0; pointer-events: none; }
+
+    .spin {
+      width: 30px; height: 30px;
+      border: 3px solid #E6E8EC;
+      border-top-color: #DC2A25;
+      border-radius: 50%;
+      animation: sp .7s linear infinite;
+    }
+    @keyframes sp { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) { .spin { animation-duration: 2s; } }
+
+    .gagal { max-width: 320px; text-align: center; line-height: 1.6; padding: 0 20px; }
+    .gagal a { color: #DC2A25; }
   </style>
 </head>
 <body>
-  <div class="iframe-container">
-    <div class="loader" id="loader">Loading app...</div>
-    <iframe 
-      src="https://script.google.com/macros/s/AKfycby4p-2Wecp4UDeXrutVfTHeQ2Q2E2p4sPK4op1yMGddVKTAPFBl1YEZ7UpXVLKlV01gbg/exec" 
-      title="JNCfy Web App"
-      onload="document.getElementById('loader').style.display='none';"
-      allowfullscreen>
-    </iframe>
+
+  <div class="loader" id="loader">
+    <div class="spin"></div>
+    <div>Memuat KABOBS VCPIS...</div>
   </div>
+
+  <div class="app-frame">
+    <iframe
+      id="app"
+      src="https://script.google.com/macros/s/AKfycby4p-2Wecp4UDeXrutVfTHeQ2Q2E2p4sPK4op1yMGddVKTAPFBl1YEZ7UpXVLKlV01gbg/exec"
+      title="KABOBS Vehicle Compliance &amp; Preventive Inspection System"
+      allow="clipboard-write; fullscreen"
+      allowfullscreen></iframe>
+  </div>
+
+  <script>
+    (function () {
+      var root = document.documentElement;
+
+      /* Ukur tinggi tampak yang sebenarnya. visualViewport mengikuti
+         penyusutan bilah alamat secara langsung, jadi dipakai lebih dulu. */
+      function ukur() {
+        var h = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+        root.style.setProperty('--app-h', h + 'px');
+      }
+
+      ukur();
+      window.addEventListener('resize', ukur);
+      window.addEventListener('orientationchange', function () { setTimeout(ukur, 250); });
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', ukur);
+        window.visualViewport.addEventListener('scroll', ukur);
+      }
+
+      /* Sembunyikan loader setelah iframe siap, dengan batas waktu
+         supaya tidak menggantung bila pemuatan lambat. */
+      var frame = document.getElementById('app');
+      var loader = document.getElementById('loader');
+      var selesai = false;
+
+      function tutupLoader() {
+        if (selesai) return;
+        selesai = true;
+        loader.classList.add('hide');
+        setTimeout(function () { loader.style.display = 'none'; }, 300);
+      }
+
+      frame.addEventListener('load', tutupLoader);
+      setTimeout(tutupLoader, 12000);
+
+      setTimeout(function () {
+        if (selesai) return;
+        loader.innerHTML =
+          '<div class="spin"></div>' +
+          '<div class="gagal">Masih memuat. Bila tidak terbuka juga, pastikan Anda sudah masuk ke akun ' +
+          'Google yang benar, lalu buka <a href="' + frame.src + '" target="_blank" rel="noopener">' +
+          'aplikasinya langsung</a>.</div>';
+      }, 8000);
+    })();
+  </script>
+
 </body>
 </html>
-
-
